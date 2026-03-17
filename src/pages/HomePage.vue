@@ -1,39 +1,60 @@
 <template>
-  <div id="homePage">
-    <div class="search-bar">
-      <a-input-search
-        v-model:value="searchParams.searchText"
-        placeholder="从海量图片中搜索"
-        enter-button="搜索"
-        size="large"
-        @search="doSearch"
-      />
-    </div>
-    <a-tabs v-model:active-key="selectedCategory" @change="doSearch">
-      <a-tab-pane key="all" tab="全部" />
-      <a-tab-pane v-for="category in categoryList" :tab="category" :key="category" />
-    </a-tabs>
-    <div class="tag-bar">
-      <span style="margin-right: 8px">标签：</span>
-      <a-space :size="[0, 8]" wrap>
-        <a-checkable-tag
-          v-for="(tag, index) in tagList"
-          :key="tag"
-          v-model:checked="selectedTagList[index]"
-          @change="doSearch"
-        >
-          {{ tag }}
-        </a-checkable-tag>
-      </a-space>
-    </div>
+  <div id="homePage" class="home-page">
+    <section class="hero">
+      <h1 class="page-title">星图集</h1>
+      <p class="page-desc">爱豆写真云 · 从海量图片里发现你的心动瞬间</p>
+      <div class="search-card">
+        <a-input-search
+          v-model:value="searchParams.searchText"
+          placeholder="输入关键词搜索"
+          enter-button="搜索"
+          size="large"
+          class="search-input"
+          @search="doSearch"
+        />
+      </div>
+    </section>
 
-    <a-pagination
-      style="text-align: right; margin-top: 16px"
-      v-model:current="searchParams.current"
-      v-model:pageSize="searchParams.pageSize"
-      :total="total"
-      @change="onPageChange"
-    />
+    <section class="filters">
+      <div class="filter-tabs">
+        <button
+          v-for="cat in ['all', ...categoryList]"
+          :key="cat"
+          type="button"
+          class="tab-btn"
+          :class="{ active: selectedCategory === (cat === 'all' ? 'all' : cat) }"
+          @click="selectCategory(cat === 'all' ? 'all' : cat)"
+        >
+          {{ cat === 'all' ? '全部' : cat }}
+        </button>
+      </div>
+      <div class="tag-bar">
+        <span class="tag-label">标签：</span>
+        <div class="tag-list">
+          <button
+            v-for="(tag, index) in tagList"
+            :key="tag"
+            type="button"
+            class="tag-btn"
+            :class="{ active: selectedTagList[index] }"
+            @click="toggleTag(index)"
+          >
+            {{ tag }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pagination-row">
+      <a-pagination
+        v-model:current="searchParams.current"
+        v-model:pageSize="searchParams.pageSize"
+        :total="total"
+        show-size-changer
+        class="pagination-style"
+        @change="onPageChange"
+      />
+    </section>
   </div>
 </template>
 
@@ -41,25 +62,15 @@
 import { onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
 
-// 🌟 2. 注释掉后端接口和未完成的组件引入
-// import {
-//   listPictureTagCategoryUsingGet,
-//   listPictureVoByPageUsingPost,
-// } from '@/api/pictureController.ts'
-// import PictureList from '@/components/PictureList.vue'
-
-// 标签和分类列表 (优化：放到最前面定义)
 const categoryList = ref<string[]>([])
 const selectedCategory = ref<string>('all')
 const tagList = ref<string[]>([])
 const selectedTagList = ref<boolean[]>([])
 
-// 🌟 3. 临时把 API.PictureVO 等换成 any，避免 TS 报错
 const dataList = ref<any[]>([])
 const total = ref(0)
 const loading = ref(true)
 
-// 搜索条件
 const searchParams = reactive<any>({
   current: 1,
   pageSize: 12,
@@ -67,96 +78,189 @@ const searchParams = reactive<any>({
   sortOrder: 'descend',
 })
 
-// 获取数据
 const fetchData = async () => {
   loading.value = true
-  // 转换搜索参数
-  const params = {
-    ...searchParams,
-    tags: [] as string[],
-  }
-  if (selectedCategory.value !== 'all') {
-    params.category = selectedCategory.value
-  }
+  const params = { ...searchParams, tags: [] as string[] }
+  if (selectedCategory.value !== 'all') params.category = selectedCategory.value
   selectedTagList.value.forEach((useTag, index) => {
-    if (useTag) {
-      params.tags.push(tagList.value[index])
-    }
+    if (useTag) params.tags.push(tagList.value[index])
   })
-
-  // 🌟 4. 注释掉真实的后端请求逻辑
-  /*
-  const res = await listPictureVoByPageUsingPost(params)
-  if (res.data.code === 0 && res.data.data) {
-    dataList.value = res.data.data.records ?? []
-    total.value = res.data.data.total ?? 0
-  } else {
-    message.error('获取数据失败，' + res.data.message)
-  }
-  */
-
-  // 模拟网络请求结束
   setTimeout(() => {
-    total.value = 50 // 随便给个总数，让分页器显示出来
+    total.value = 50
     loading.value = false
   }, 500)
 }
 
-// 页面加载时获取数据，请求一次
-onMounted(() => {
-  fetchData()
-})
-
-// 分页参数
 const onPageChange = (page: number, pageSize: number) => {
   searchParams.current = page
   searchParams.pageSize = pageSize
   fetchData()
 }
 
-// 搜索
 const doSearch = () => {
-  // 重置搜索条件
   searchParams.current = 1
   fetchData()
 }
 
-/**
- * 获取标签和分类选项
- */
-const getTagCategoryOptions = async () => {
-  // 🌟 5. 注释掉真实的分类请求
-  /*
-  const res = await listPictureTagCategoryUsingGet()
-  if (res.data.code === 0 && res.data.data) {
-    tagList.value = res.data.data.tagList ?? []
-    categoryList.value = res.data.data.categoryList ?? []
-  } else {
-    message.error('获取标签分类列表失败，' + res.data.message)
-  }
-  */
+const selectCategory = (cat: string) => {
+  selectedCategory.value = cat
+  doSearch()
+}
 
-  // 临时塞一点假数据，让你能看到界面效果
+const toggleTag = (index: number) => {
+  selectedTagList.value[index] = !selectedTagList.value[index]
+  doSearch()
+}
+
+const getTagCategoryOptions = async () => {
   categoryList.value = ['写真', '演唱会', '红毯', '日常']
   tagList.value = ['高清', '生图', '饭拍', '壁纸']
+  selectedTagList.value = tagList.value.map(() => false)
 }
 
 onMounted(() => {
   getTagCategoryOptions()
+  fetchData()
 })
 </script>
 
 <style scoped>
-#homePage {
-  margin-bottom: 16px;
+.home-page {
+  padding: var(--space-4) 0;
 }
 
-#homePage .search-bar {
+.hero {
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: var(--font-title);
+  letter-spacing: var(--letter-relaxed);
+  margin: 0 0 var(--space-2);
+  color: var(--color-ink);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-desc {
+  margin: 0 0 var(--space-4);
+  color: var(--color-ink);
+  opacity: 0.85;
+  line-height: var(--line-body);
+}
+
+.search-card {
   max-width: 480px;
-  margin: 0 auto 16px;
+  margin: 0 auto;
+  padding: var(--space-3);
+  border: var(--border-soft);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
-#homePage .tag-bar {
-  margin-bottom: 16px;
+.search-input :deep(.ant-input-search-button) {
+  border: var(--border-soft);
+  background: var(--gradient-primary);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0 var(--radius-btn) var(--radius-btn) 0;
+  transition: all var(--duration) var(--ease-smooth);
+}
+.search-input :deep(.ant-input-search-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: var(--glow-sakura);
+}
+.search-input :deep(.ant-input) {
+  border: var(--border-soft);
+  border-radius: var(--radius-btn) 0 0 var(--radius-btn);
+}
+
+.filters {
+  margin-bottom: var(--space-4);
+}
+
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.tab-btn {
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-soft);
+  background: var(--bg-card);
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+.tab-btn:hover {
+  background: var(--gradient-soft);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-2px);
+}
+.tab-btn.active {
+  background: var(--gradient-primary);
+  color: #fff;
+  border-color: var(--color-sakura-border);
+  box-shadow: var(--glow-sakura);
+}
+
+.tag-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tag-label {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tag-btn {
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-soft);
+  background: var(--bg-card);
+  border-radius: var(--radius-btn);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease-smooth);
+}
+.tag-btn:hover,
+.tag-btn.active {
+  background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-sakura) 100%);
+  box-shadow: var(--glow-cream);
+  transform: translateY(-2px);
+}
+
+.pagination-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}
+
+.pagination-style :deep(.ant-pagination-item) {
+  border: var(--border-soft);
+  border-radius: var(--radius-btn);
+  transition: all var(--duration) var(--ease-smooth);
+}
+.pagination-style :deep(.ant-pagination-item:hover),
+.pagination-style :deep(.ant-pagination-item-active) {
+  box-shadow: var(--shadow-soft);
 }
 </style>

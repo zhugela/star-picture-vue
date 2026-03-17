@@ -1,21 +1,28 @@
 <template>
-  <div id="app">
+  <div id="app" class="app-root">
     <GlobalHeader />
-
-    <div class="main-content">
+    <main class="main-content">
       <router-view />
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-// 引入我们之前写好的导航栏组件
 import GlobalHeader from '@/components/GlobalHeader.vue'
 </script>
 
 <style scoped>
-/* 给下面的内容留点边距，稍微美化一下 */
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .main-content {
-  padding: 20px;
+  flex: 1;
+  padding: var(--space-3);
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 </style>
