@@ -9,7 +9,10 @@ declare module '*.vue' {
 // 核心修复点：在此处添加 BASE_URL 的类型声明
 interface ImportMetaEnv {
   readonly BASE_URL: string
-  // 如果你还有其他变量（如 VITE_API_URL），也请写在这里
+  /** 文件上传（multipart）接口前缀，默认 `/api/file` */
+  readonly VITE_FILE_API_BASE?: string
+  /** PictureController 业务前缀，默认 `/api/picture`。本仓库有 context-path `/api` 时不要改成 `/picture`。 */
+  readonly VITE_PICTURE_API_BASE?: string
 }
 
 interface ImportMeta {

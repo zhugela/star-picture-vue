@@ -1,7 +1,7 @@
 <template>
   <header class="global-header">
     <div class="header-inner">
-      <router-link to="/" class="title-bar">
+      <router-link to="/" class="brand">
         <span class="logo" aria-hidden="true">
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -10,21 +10,24 @@
                 <stop offset="100%" stop-color="#e0bbe4" />
               </linearGradient>
             </defs>
-            <path d="M20 4l2.5 7.5L30 14l-7.5 2.5L20 24l-2.5-7.5L10 14l7.5-2.5L20 4z" fill="url(#logo-grad)"/>
-            <circle cx="28" cy="8" r="2" fill="#fff4bd" opacity="0.9"/>
-            <circle cx="12" cy="28" r="1.5" fill="#b2e2f2" opacity="0.9"/>
+            <path
+              d="M20 4l2.5 7.5L30 14l-7.5 2.5L20 24l-2.5-7.5L10 14l7.5-2.5L20 4z"
+              fill="url(#logo-grad)"
+            />
+            <circle cx="28" cy="8" r="2" fill="#fff4bd" opacity="0.9" />
+            <circle cx="12" cy="28" r="1.5" fill="#b2e2f2" opacity="0.9" />
           </svg>
         </span>
-        <span class="title">星图集</span>
+        <span class="brand-name">星图集</span>
       </router-link>
 
-      <nav class="nav-menu">
+      <nav class="main-nav" aria-label="主导航">
         <router-link
           v-for="item in menuItems"
           :key="item.path"
           :to="item.path"
-          class="nav-link"
-          :class="{ active: current === item.path }"
+          class="nav-item"
+          :class="{ active: isActive(item.path) }"
         >
           {{ item.label }}
         </router-link>
@@ -33,10 +36,10 @@
       <div class="user-area">
         <div v-if="loginUserStore.loginUser.id" class="user-logged">
           <a-dropdown :trigger="['click']">
-            <div class="user-trigger">
-              <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="32" />
-              <span class="user-name">{{ loginUserStore.loginUser.userName ?? '无名' }}</span>
-            </div>
+            <button type="button" class="user-trigger">
+              <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="28" />
+              <span class="user-name">{{ loginUserStore.loginUser.userName ?? '用户' }}</span>
+            </button>
             <template #overlay>
               <a-menu class="dropdown-menu">
                 <a-menu-item @click="doLogout">
@@ -47,7 +50,7 @@
             </template>
           </a-dropdown>
         </div>
-        <a v-else href="/user/login" class="btn-login">登录</a>
+        <router-link v-else to="/user/login" class="btn-login">登录</router-link>
       </div>
     </div>
   </header>
@@ -64,19 +67,29 @@ import { userLogoutUsingPost } from '@/api/userController'
 const loginUserStore = useLoginUserStore()
 const router = useRouter()
 const route = useRoute()
-const current = ref(route.path)
+const currentPath = ref(route.path)
 
 watch(
   () => route.path,
   (path) => {
-    current.value = path
-  }
+    currentPath.value = path
+  },
 )
 
 const menuItems = [
-  { path: '/', label: '主页' },
+  { path: '/', label: '首页' },
+  { path: '/add_picture', label: '创建图片' },
+  { path: '/admin/pictureManage', label: '图片管理' },
+  { path: '/admin/spaceManage', label: '空间管理' },
   { path: '/about', label: '关于' },
 ]
+
+function isActive(path: string) {
+  if (path === '/') {
+    return currentPath.value === '/'
+  }
+  return currentPath.value === path || currentPath.value.startsWith(path + '/')
+}
 
 const doLogout = async () => {
   const res = await userLogoutUsingPost()
@@ -92,136 +105,162 @@ const doLogout = async () => {
 
 <style scoped>
 .global-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: var(--glass-border);
-  box-shadow: var(--shadow-soft);
+  height: 64px;
+  background: #fff;
 }
 
 .header-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  max-width: 1280px;
+  max-width: 1200px;
+  height: 64px;
   margin: 0 auto;
-  padding: var(--space-2) var(--space-3);
-  gap: var(--space-3);
+  padding: 0 24px;
+  gap: 16px;
 }
 
-.title-bar {
-  display: flex;
+.brand {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 10px;
+  flex-shrink: 0;
   text-decoration: none;
-  color: var(--color-ink);
-  font-weight: var(--font-title);
-  letter-spacing: var(--letter-relaxed);
-  transition: all var(--duration) var(--ease-smooth);
+  color: rgba(0, 0, 0, 0.88);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
 }
-.title-bar:hover {
-  opacity: 0.88;
+
+.brand:hover {
+  color: #1677ff;
 }
 
 .logo {
   display: flex;
-  align-items: center;
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
+
 .logo svg {
   width: 100%;
   height: 100%;
 }
 
-.title {
-  font-size: 1.125rem;
+.brand-name {
+  white-space: nowrap;
 }
 
-.nav-menu {
+.main-nav {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
-.nav-link {
-  padding: var(--space-1) var(--space-2);
-  color: var(--color-ink);
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
   text-decoration: none;
-  font-weight: 600;
-  border: var(--border-soft);
-  background: var(--bg-card);
-  border-radius: var(--radius-btn);
-  transition: all var(--duration) var(--ease-smooth);
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+  white-space: nowrap;
 }
-.nav-link:hover {
-  background: var(--gradient-soft);
-  box-shadow: var(--shadow-soft);
-  transform: translateY(-2px);
+
+.nav-item:hover {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.06);
 }
-.nav-link.active {
-  background: var(--gradient-primary);
-  color: #fff;
-  border-color: var(--color-sakura-border);
-  box-shadow: var(--glow-sakura);
+
+.nav-item.active {
+  color: #1677ff;
+  font-weight: 500;
+  box-shadow: inset 0 -2px 0 #1677ff;
+  border-radius: 6px 6px 0 0;
 }
 
 .user-area {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .user-trigger {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  border: var(--border-soft);
-  background: var(--bg-card);
-  border-radius: var(--radius-btn);
+  gap: 8px;
+  height: 40px;
+  padding: 0 10px;
+  margin: 0;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fff;
   cursor: pointer;
-  transition: all var(--duration) var(--ease-smooth);
+  font: inherit;
+  color: rgba(0, 0, 0, 0.88);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 .user-trigger:hover {
-  box-shadow: var(--shadow-soft);
-  transform: translateY(-2px);
+  border-color: #d9d9d9;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .user-name {
-  font-weight: 600;
-  max-width: 96px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 14px;
 }
 
 .btn-login {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-1) var(--space-3);
-  background: var(--gradient-primary);
-  color: #fff !important;
-  font-weight: 700;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
   text-decoration: none;
-  border: 1px solid var(--color-sakura-border);
-  border-radius: var(--radius-btn);
-  box-shadow: var(--glow-sakura);
-  transition: all var(--duration) var(--ease-smooth);
+  background: #1677ff;
+  border-radius: 8px;
+  border: none;
+  transition: background 0.2s;
 }
+
 .btn-login:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glow-sakura), var(--shadow-soft);
+  color: #fff;
+  background: #4096ff;
 }
 
 :deep(.dropdown-menu) {
-  border: var(--border-soft);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-soft-lg);
-  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 900px) {
+  .header-inner {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 64px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .main-nav {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 </style>

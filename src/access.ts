@@ -6,24 +6,23 @@ import router from '@/router'
 let firstFetchLoginUser = true
 
 /**
- * 全局权限校验
+ * 全局权限校验（Vue Router 4：通过 return 控制导航，勿再使用 next()）
  */
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
   const loginUserStore = useLoginUserStore()
   let loginUser = loginUserStore.loginUser
-  // 确保页面刷新，首次加载时，能够等后端返回用户信息后再校验权限
   if (firstFetchLoginUser) {
     await loginUserStore.fetchLoginUser()
     loginUser = loginUserStore.loginUser
     firstFetchLoginUser = false
   }
-  const toUrl = to.fullPath
-  if (toUrl.startsWith('/admin')) {
+  if (to.path.startsWith('/admin')) {
     if (!loginUser || loginUser.userRole !== 'admin') {
       message.error('没有权限')
-      next(`/user/login?redirect=${to.fullPath}`)
-      return
+      return {
+        path: '/user/login',
+        query: { redirect: to.fullPath },
+      }
     }
   }
-  next()
 })

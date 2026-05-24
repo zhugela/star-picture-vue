@@ -1,99 +1,121 @@
 <template>
   <div id="homePage" class="home-page">
-    <section class="hero">
-      <h1 class="page-title">星图集</h1>
-      <p class="page-desc">爱豆写真云 · 从海量图片里发现你的心动瞬间</p>
-      <div class="search-card">
-        <a-input-search
-          v-model:value="searchParams.searchText"
-          placeholder="输入关键词搜索"
-          enter-button="搜索"
-          size="large"
-          class="search-input"
-          @search="doSearch"
-        />
-      </div>
-    </section>
-
-    <section class="filters">
-      <div class="filter-tabs">
-        <button
-          v-for="cat in ['all', ...categoryList]"
-          :key="cat"
-          type="button"
-          class="tab-btn"
-          :class="{ active: selectedCategory === (cat === 'all' ? 'all' : cat) }"
-          @click="selectCategory(cat === 'all' ? 'all' : cat)"
-        >
-          {{ cat === 'all' ? '全部' : cat }}
-        </button>
-      </div>
-      <div class="tag-bar">
-        <span class="tag-label">标签：</span>
-        <div class="tag-list">
-          <button
-            v-for="(tag, index) in tagList"
-            :key="tag"
-            type="button"
-            class="tag-btn"
-            :class="{ active: selectedTagList[index] }"
-            @click="toggleTag(index)"
-          >
-            {{ tag }}
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <section class="pagination-row">
-      <a-pagination
-        v-model:current="searchParams.current"
-        v-model:pageSize="searchParams.pageSize"
-        :total="total"
-        show-size-changer
-        class="pagination-style"
-        @change="onPageChange"
+    <section class="card search-card">
+      <h1 class="hero-title">发现优质图片</h1>
+      <p class="hero-subtitle">搜索你喜欢的图片素材</p>
+      <a-input-search
+        v-model:value="searchParams.searchText"
+        placeholder="输入关键词搜索"
+        enter-button="搜索"
+        size="large"
+        class="hero-search"
+        @search="doSearch"
       />
     </section>
+
+    <section class="card tabs-card">
+      <a-tabs v-model:active-key="selectedCategory" type="line" class="category-tabs" @change="onCategoryChange">
+        <a-tab-pane key="all" tab="全部" />
+        <a-tab-pane v-for="category in categoryList" :key="category" :tab="category" />
+      </a-tabs>
+    </section>
+
+    <section class="card tags-card">
+      <span class="tags-label">标签</span>
+      <div class="tags-row">
+        <a-space :size="[8, 8]" wrap>
+          <a-checkable-tag
+            v-for="(tag, index) in tagList"
+            :key="tag"
+            v-model:checked="selectedTagList[index]"
+            class="tag-item"
+            @change="doSearch"
+          >
+            {{ tag }}
+          </a-checkable-tag>
+        </a-space>
+      </div>
+    </section>
+
+    <section class="card list-card">
+      <PictureList v-if="dataList.length > 0 || loading" :data-list="dataList" :loading="loading" />
+      <div v-else class="empty-holder">
+        <a-empty description="暂无图片，试试调整筛选或稍后重试" />
+      </div>
+    </section>
+
+    <div class="pagination-bar">
+      <a-pagination
+        v-model:current="searchParams.current"
+        v-model:page-size="searchParams.pageSize"
+        :total="total"
+        show-size-changer
+        @change="onPageChange"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import {
+  listPictureTagCategoryUsingGet,
+  listPictureVoByPageUsingPost,
+} from '@/api/pictureController.ts'
+import PictureList from '@/components/PictureList.vue'
 
-const categoryList = ref<string[]>([])
-const selectedCategory = ref<string>('all')
-const tagList = ref<string[]>([])
-const selectedTagList = ref<boolean[]>([])
-
-const dataList = ref<any[]>([])
+const dataList = ref<API.PictureVO[]>([])
 const total = ref(0)
 const loading = ref(true)
 
-const searchParams = reactive<any>({
+const searchParams = reactive<API.PictureQueryRequest>({
   current: 1,
   pageSize: 12,
   sortField: 'createTime',
   sortOrder: 'descend',
 })
 
+const categoryList = ref<string[]>([])
+const selectedCategory = ref<string>('all')
+const tagList = ref<string[]>([])
+const selectedTagList = ref<boolean[]>([])
+
 const fetchData = async () => {
   loading.value = true
-  const params = { ...searchParams, tags: [] as string[] }
-  if (selectedCategory.value !== 'all') params.category = selectedCategory.value
-  selectedTagList.value.forEach((useTag, index) => {
-    if (useTag) params.tags.push(tagList.value[index])
-  })
-  setTimeout(() => {
-    total.value = 50
+  try {
+    const params: API.PictureQueryRequest = {
+      ...searchParams,
+      searchText: searchParams.searchText?.trim() || undefined,
+      tags: [],
+      nullSpaceId: true,
+    }
+    if (selectedCategory.value !== 'all') {
+      params.category = selectedCategory.value
+    }
+    selectedTagList.value.forEach((useTag, index) => {
+      if (useTag && tagList.value[index]) {
+        params.tags!.push(tagList.value[index])
+      }
+    })
+    if (!params.tags?.length) {
+      delete params.tags
+    }
+    const res = await listPictureVoByPageUsingPost(params)
+    if (res.data.code === 0 && res.data.data) {
+      dataList.value = res.data.data.records ?? []
+      total.value = res.data.data.total ?? 0
+    } else {
+      message.error('获取数据失败，' + res.data.message)
+      dataList.value = []
+      total.value = 0
+    }
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
-const onPageChange = (page: number, pageSize: number) => {
-  searchParams.current = page
-  searchParams.pageSize = pageSize
+const onPageChange = () => {
   fetchData()
 }
 
@@ -102,165 +124,152 @@ const doSearch = () => {
   fetchData()
 }
 
-const selectCategory = (cat: string) => {
-  selectedCategory.value = cat
-  doSearch()
-}
-
-const toggleTag = (index: number) => {
-  selectedTagList.value[index] = !selectedTagList.value[index]
+const onCategoryChange = () => {
   doSearch()
 }
 
 const getTagCategoryOptions = async () => {
-  categoryList.value = ['写真', '演唱会', '红毯', '日常']
-  tagList.value = ['高清', '生图', '饭拍', '壁纸']
-  selectedTagList.value = tagList.value.map(() => false)
+  const res = await listPictureTagCategoryUsingGet()
+  if (res.data.code === 0 && res.data.data) {
+    tagList.value = res.data.data.tagList ?? []
+    categoryList.value = res.data.data.categoryList ?? []
+    selectedTagList.value = tagList.value.map(() => false)
+  } else {
+    message.error('获取标签分类列表失败，' + res.data.message)
+  }
 }
 
-onMounted(() => {
-  getTagCategoryOptions()
-  fetchData()
+onMounted(async () => {
+  await getTagCategoryOptions()
+  await fetchData()
 })
 </script>
 
 <style scoped>
 .home-page {
-  padding: var(--space-4) 0;
+  width: 100%;
+  max-width: 100%;
 }
 
-.hero {
-  margin-bottom: var(--space-6);
-  text-align: center;
-}
-
-.page-title {
-  font-size: 2rem;
-  font-weight: var(--font-title);
-  letter-spacing: var(--letter-relaxed);
-  margin: 0 0 var(--space-2);
-  color: var(--color-ink);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.page-desc {
-  margin: 0 0 var(--space-4);
-  color: var(--color-ink);
-  opacity: 0.85;
-  line-height: var(--line-body);
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  padding: 24px;
 }
 
 .search-card {
-  max-width: 480px;
+  text-align: center;
+}
+
+.hero-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.88);
+  line-height: 1.35;
+}
+
+.hero-subtitle {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.hero-search {
+  max-width: 520px;
   margin: 0 auto;
-  padding: var(--space-3);
-  border: var(--border-soft);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-soft);
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
 }
 
-.search-input :deep(.ant-input-search-button) {
-  border: var(--border-soft);
-  background: var(--gradient-primary);
-  color: #fff;
-  font-weight: 600;
-  border-radius: 0 var(--radius-btn) var(--radius-btn) 0;
-  transition: all var(--duration) var(--ease-smooth);
-}
-.search-input :deep(.ant-input-search-button:hover) {
-  transform: translateY(-1px);
-  box-shadow: var(--glow-sakura);
-}
-.search-input :deep(.ant-input) {
-  border: var(--border-soft);
-  border-radius: var(--radius-btn) 0 0 var(--radius-btn);
+.tabs-card {
+  padding-bottom: 8px;
 }
 
-.filters {
-  margin-bottom: var(--space-4);
+.category-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 0;
 }
 
-.filter-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-bottom: var(--space-3);
+.category-tabs :deep(.ant-tabs-tab) {
+  padding: 10px 0;
+  font-size: 14px;
 }
 
-.tab-btn {
-  padding: var(--space-1) var(--space-2);
-  border: var(--border-soft);
-  background: var(--bg-card);
-  border-radius: var(--radius-btn);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--duration) var(--ease-smooth);
-}
-.tab-btn:hover {
-  background: var(--gradient-soft);
-  box-shadow: var(--shadow-soft);
-  transform: translateY(-2px);
-}
-.tab-btn.active {
-  background: var(--gradient-primary);
-  color: #fff;
-  border-color: var(--color-sakura-border);
-  box-shadow: var(--glow-sakura);
+.category-tabs :deep(.ant-tabs-ink-bar) {
+  height: 2px;
+  border-radius: 1px;
 }
 
-.tag-bar {
+.tags-card {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.tags-label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.tags-row :deep(.ant-checkable-tag) {
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.tags-row :deep(.ant-checkable-tag-checked) {
+  background: rgba(22, 119, 255, 0.1);
+  border-color: #91caff;
+  color: #1677ff;
+}
+
+.list-card {
+  min-height: 280px;
+  margin-bottom: 24px;
+}
+
+.empty-holder {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  justify-content: center;
+  min-height: 240px;
+  padding: 24px 0;
 }
 
-.tag-label {
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.tag-btn {
-  padding: var(--space-1) var(--space-2);
-  border: var(--border-soft);
-  background: var(--bg-card);
-  border-radius: var(--radius-btn);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all var(--duration) var(--ease-smooth);
-}
-.tag-btn:hover,
-.tag-btn.active {
-  background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-sakura) 100%);
-  box-shadow: var(--glow-cream);
-  transform: translateY(-2px);
-}
-
-.pagination-row {
+.pagination-bar {
   display: flex;
   justify-content: flex-end;
-  margin-top: var(--space-4);
+  padding: 0 8px 8px 0;
+  max-width: 100%;
 }
 
-.pagination-style :deep(.ant-pagination-item) {
-  border: var(--border-soft);
-  border-radius: var(--radius-btn);
-  transition: all var(--duration) var(--ease-smooth);
+.pagination-bar :deep(.ant-pagination) {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 8px;
 }
-.pagination-style :deep(.ant-pagination-item:hover),
-.pagination-style :deep(.ant-pagination-item-active) {
-  box-shadow: var(--shadow-soft);
+
+@media (max-width: 576px) {
+  .card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .hero-title {
+    font-size: 18px;
+  }
+
+  .pagination-bar {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .pagination-bar :deep(.ant-pagination) {
+    justify-content: center;
+  }
 }
 </style>

@@ -9,9 +9,13 @@ export const useLoginUserStore = defineStore('loginUser', () => {
 
 
   async function fetchLoginUser() {
-    const res = await getLoginUserUsingGet()
-    if (res.data.code === 0 && res.data.data) {
-      loginUser.value = res.data.data
+    try {
+      const res = await getLoginUserUsingGet()
+      if (res.data.code === 0 && res.data.data) {
+        loginUser.value = res.data.data
+      }
+    } catch {
+      // 后端未启动、断网或 CORS 时不抛错，避免路由守卫中断；保持当前登录态展示
     }
   }
 

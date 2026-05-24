@@ -1,45 +1,74 @@
 <template>
-  <div id="basicLayout">
-    <a-layout style="min-height: 100vh">
-      <a-layout-header class="header">
+  <div id="basicLayout" class="basic-layout">
+    <a-layout class="layout-root">
+      <a-layout-header class="site-header">
         <GlobalHeader />
       </a-layout-header>
-      <a-layout-content class="content">
-        <router-view />
-      </a-layout-content>
-      <a-layout-footer class="footer">
-        <span>星图集 · 爱豆写真云</span>
-      </a-layout-footer>
+
+      <a-layout class="body-row">
+        <GlobalSider class="site-sider" />
+        <a-layout-content class="site-content">
+          <div class="content-inner">
+            <router-view />
+          </div>
+        </a-layout-content>
+      </a-layout>
+
+      <GlobalFooter />
     </a-layout>
   </div>
 </template>
 
 <script setup lang="ts">
-import GlobalHeader from "@/components/GlobalHeader.vue";
+import GlobalHeader from '@/components/GlobalHeader.vue'
+import GlobalSider from '@/components/GlobalSider.vue'
+import GlobalFooter from '@/components/GlobalFooter.vue'
 </script>
 
-
 <style scoped>
-#basicLayout .footer {
-  background: #efefef;
-  padding: 16px;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  text-align: center;
+.basic-layout {
+  min-height: 100vh;
+  background: #f5f7fa;
+  overflow-x: clip;
 }
 
-#basicLayout.content {
-  background: linear-gradient(to right, #fefefe, #fff);
-  margin-bottom: 28px;
-  padding: 20px;
-}
-#basicLayout.header {
-  padding-inline: 20px;
-  margin-bottom: 16px;
-  color: unset;
-  background: white;
+.layout-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f5f7fa;
 }
 
+.site-header {
+  height: 64px;
+  line-height: 64px;
+  padding: 0;
+  margin: 0;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.body-row {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 0;
+  background: #f5f7fa;
+}
+
+.site-content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+  background: #f5f7fa;
+}
+
+.content-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
 </style>
