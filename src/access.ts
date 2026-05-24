@@ -25,4 +25,12 @@ router.beforeEach(async (to) => {
       }
     }
   }
+  if (to.path === '/user/profile' || to.path === '/my_space') {
+    if (!loginUser?.id) {
+      return {
+        path: '/user/login',
+        query: { redirect: to.fullPath },
+      }
+    }
+  }
 })

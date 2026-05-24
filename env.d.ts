@@ -6,7 +6,6 @@ declare module '*.vue' {
   export default component
 }
 
-// 核心修复点：在此处添加 BASE_URL 的类型声明
 interface ImportMetaEnv {
   readonly BASE_URL: string
   /** 文件上传（multipart）接口前缀，默认 `/api/file` */

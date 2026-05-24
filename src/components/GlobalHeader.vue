@@ -23,7 +23,7 @@
 
       <nav class="main-nav" aria-label="主导航">
         <router-link
-          v-for="item in menuItems"
+          v-for="item in visibleMenuItems"
           :key="item.path"
           :to="item.path"
           class="nav-item"
@@ -37,11 +37,18 @@
         <div v-if="loginUserStore.loginUser.id" class="user-logged">
           <a-dropdown :trigger="['click']">
             <button type="button" class="user-trigger">
-              <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="28" />
+              <a-avatar :src="avatarSrc" :size="32" class="header-avatar">
+                {{ avatarFallback }}
+              </a-avatar>
               <span class="user-name">{{ loginUserStore.loginUser.userName ?? '用户' }}</span>
             </button>
             <template #overlay>
               <a-menu class="dropdown-menu">
+                <a-menu-item @click="goProfile">
+                  <UserOutlined />
+                  个人资料
+                </a-menu-item>
+                <a-menu-divider />
                 <a-menu-item @click="doLogout">
                   <LogoutOutlined />
                   退出登录
@@ -57,12 +64,13 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
-import { LogoutOutlined } from '@ant-design/icons-vue'
+import { computed, ref, watch } from 'vue'
+import { LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import { userLogoutUsingPost } from '@/api/userController'
+import { clearToken } from '@/utils/token'
 
 const loginUserStore = useLoginUserStore()
 const router = useRouter()
@@ -77,12 +85,29 @@ watch(
 )
 
 const menuItems = [
-  { path: '/', label: '首页' },
-  { path: '/add_picture', label: '创建图片' },
-  { path: '/admin/pictureManage', label: '图片管理' },
-  { path: '/admin/spaceManage', label: '空间管理' },
+  { path: '/', label: '公共图库' },
+  { path: '/my_space', label: '我的空间', needLogin: true },
+  { path: '/add_picture', label: '创建图片', needLogin: true },
+  { path: '/admin/pictureManage', label: '图片管理', admin: true },
+  { path: '/admin/spaceManage', label: '空间管理', admin: true },
   { path: '/about', label: '关于' },
 ]
+
+const visibleMenuItems = computed(() => {
+  const user = loginUserStore.loginUser
+  return menuItems.filter((item) => {
+    if (item.admin && user.userRole !== 'admin') return false
+    if (item.needLogin && !user.id) return false
+    return true
+  })
+})
+
+const avatarSrc = computed(() => loginUserStore.loginUser.userAvatar || undefined)
+
+const avatarFallback = computed(() => {
+  const name = loginUserStore.loginUser.userName || '用'
+  return name.charAt(0).toUpperCase()
+})
 
 function isActive(path: string) {
   if (path === '/') {
@@ -91,9 +116,14 @@ function isActive(path: string) {
   return currentPath.value === path || currentPath.value.startsWith(path + '/')
 }
 
+const goProfile = () => {
+  router.push('/user/profile')
+}
+
 const doLogout = async () => {
   const res = await userLogoutUsingPost()
   if (res.data.code === 0) {
+    clearToken()
     loginUserStore.setLoginUser({ userName: '未登录' })
     message.success('退出登录成功')
     await router.push('/user/login')
@@ -212,6 +242,13 @@ const doLogout = async () => {
 .user-trigger:hover {
   border-color: #d9d9d9;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.header-avatar {
+  background: linear-gradient(135deg, #1677ff, #69b1ff);
+  color: #fff;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .user-name {

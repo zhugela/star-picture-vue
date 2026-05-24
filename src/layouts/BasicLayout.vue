@@ -5,24 +5,17 @@
         <GlobalHeader />
       </a-layout-header>
 
-      <a-layout class="body-row">
-        <GlobalSider class="site-sider" />
-        <a-layout-content class="site-content">
-          <div class="content-inner">
-            <router-view />
-          </div>
-        </a-layout-content>
-      </a-layout>
-
-      <GlobalFooter />
+      <a-layout-content class="site-content">
+        <div class="content-inner">
+          <router-view />
+        </div>
+      </a-layout-content>
     </a-layout>
   </div>
 </template>
 
 <script setup lang="ts">
 import GlobalHeader from '@/components/GlobalHeader.vue'
-import GlobalSider from '@/components/GlobalSider.vue'
-import GlobalFooter from '@/components/GlobalFooter.vue'
 </script>
 
 <style scoped>
@@ -48,15 +41,6 @@ import GlobalFooter from '@/components/GlobalFooter.vue'
   border-bottom: 1px solid #e8e8e8;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
-}
-
-.body-row {
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  min-height: 0;
-  background: #f5f7fa;
 }
 
 .site-content {

@@ -89,7 +89,7 @@ const columns = [
 ]
 
 const doDelete = async (id: number) => {
-  const res = await deleteUserUsingPost({ id })
+  const res = await deleteUserUsingPost({ id: String(id) })
   console.log('res', res)
   if (res.data.code === 0) {
     message.success('删除成功')
@@ -146,7 +146,7 @@ const pagination = computed(() => {
     pageSize: searchParams.pageSize,
     total: total.value,
     showSizeChanger: true,
-    showTotal: (total) => `共 ${total} 条`,
+    showTotal: (total: number) => `共 ${total} 条`,
   }
 })
 

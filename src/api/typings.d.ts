@@ -221,6 +221,7 @@ declare namespace API {
   type LoginUserVo = {
     createTime?: string
     id?: number
+    token?: string
     userAccount?: string
     userAvatar?: string
     userName?: string
@@ -400,6 +401,7 @@ declare namespace API {
     id?: string
     introduction?: string
     name?: string
+    nullSpaceId?: boolean
     pageSize?: number
     picFormat?: string
     picHeight?: number
@@ -487,6 +489,7 @@ declare namespace API {
     picScale?: number
     picSize?: number
     picWidth?: number
+    reviewStatus?: number
     spaceId?: string
     tags?: string[]
     thumbnailUrl?: string
@@ -555,6 +558,12 @@ declare namespace API {
     userName?: string
     userProfile?: string
     userRole?: string
+  }
+
+  type UserUpdateMyRequest = {
+    userAvatar?: string
+    userName?: string
+    userProfile?: string
   }
 
   type UserVO = {

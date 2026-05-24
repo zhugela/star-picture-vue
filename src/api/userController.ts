@@ -133,3 +133,18 @@ export async function updateUserUsingPost(
     ...(options || {}),
   })
 }
+
+/** updateMyProfile POST /api/user/update/my */
+export async function updateMyProfileUsingPost(
+  body: API.UserUpdateMyRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/update/my', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}

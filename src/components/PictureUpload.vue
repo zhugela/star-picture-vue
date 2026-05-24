@@ -44,7 +44,8 @@ const handleUpload = async ({ file }: any) => {
     }
     console.log('请求参数:', params)
 
-    const rawFile = (file as UploadProps['fileList'][number]).originFileObj ?? (file as File)
+    const rawFile =
+      (file as { originFileObj?: File }).originFileObj ?? (file as File)
     const res = await uploadPictureUsingPost(params, {}, rawFile)
     console.log('上传结果:', res)
     
@@ -55,9 +56,10 @@ const handleUpload = async ({ file }: any) => {
     } else {
       message.error('图片上传失败，' + res.data.message)
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('图片上传失败', error)
-    message.error('图片上传失败，' + error.message)
+    const msg = error instanceof Error ? error.message : '未知错误'
+    message.error('图片上传失败，' + msg)
   }
   loading.value = false
 }
@@ -68,14 +70,14 @@ const loading = ref<boolean>(false)
  * 上传前的校验
  * @param file
  */
-const beforeUpload = (file: UploadProps['fileList'][number]) => {
+const beforeUpload = (file: { type?: string; size?: number }) => {
   // 校验图片格式
   const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png'
   if (!isJpgOrPng) {
     message.error('不支持上传该格式的图片，推荐 jpg 或 png')
   }
   // 校验图片大小
-  const isLt2M = file.size / 1024 / 1024 < 2
+  const isLt2M = (file.size ?? 0) / 1024 / 1024 < 2
   if (!isLt2M) {
     message.error('不能上传超过 2M 的图片')
   }

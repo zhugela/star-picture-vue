@@ -32,6 +32,7 @@
 import { reactive } from 'vue'
 import { userLoginUsingPost } from '@/api/userController.ts'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
+import { setToken } from '@/utils/token.ts'
 import { message } from 'ant-design-vue'
 import router from '@/router'
 
@@ -45,6 +46,9 @@ const loginUserStore = useLoginUserStore()
 const handleSubmit = async (values: API.UserLoginRequest) => {
   const res = await userLoginUsingPost(values)
   if (res.data.code === 0 && res.data.data) {
+    if (res.data.data.token) {
+      setToken(res.data.data.token)
+    }
     await loginUserStore.fetchLoginUser()
     message.success('登录成功')
     router.push({ path: '/', replace: true })

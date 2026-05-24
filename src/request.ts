@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
+import { getToken } from '@/utils/token.ts'
 
 // 创建 Axios 实例
-// 如果不写这个 withCredentials 前端就不会携带 cookie ，会出现前端已经登录但是后端不认的情况
+// withCredentials 保留 Session；Authorization 供小程序同款 JWT 联调
 const myAxios = axios.create({
   baseURL: 'http://localhost:8123',
   timeout: 60000,
@@ -12,7 +13,11 @@ const myAxios = axios.create({
 // 全局请求拦截器
 myAxios.interceptors.request.use(
   function (config) {
-    // Do something before request is sent
+    const token = getToken()
+    if (token) {
+      config.headers = config.headers || {}
+      config.headers.Authorization = 'Bearer ' + token
+    }
     return config
   },
   function (error) {

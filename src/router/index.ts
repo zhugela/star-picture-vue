@@ -13,6 +13,7 @@ import AddSpacePage from '@/pages/AddSpacePage.vue'
 import SpaceDetailPage from '@/pages/SpaceDetailPage.vue'
 import PictureDetailPage from '@/pages/PictureDetailPage.vue'
 import SearchPicturePage from '@/pages/SearchPicturePage.vue'
+import UserProfilePage from '@/pages/user/UserProfilePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,11 +29,6 @@ const router = createRouter({
       component: UserRegisterPage,
     },
     {
-      path: '/my_space',
-      name: '我的空间',
-      component: MySpacePage,
-    },
-    {
       path: '/',
       component: BasicLayout,
       children: [
@@ -40,6 +36,11 @@ const router = createRouter({
           path: '',
           name: 'home',
           component: HomePage,
+        },
+        {
+          path: 'my_space',
+          name: '我的空间',
+          component: MySpacePage,
         },
         {
           path: 'admin/pictureManage',
@@ -92,6 +93,11 @@ const router = createRouter({
           path: 'about',
           name: 'about',
           component: () => import('../views/AboutView.vue'),
+        },
+        {
+          path: 'user/profile',
+          name: '个人资料',
+          component: UserProfilePage,
         },
       ],
     },

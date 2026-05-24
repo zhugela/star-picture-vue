@@ -223,8 +223,9 @@ const columns = [
   },
 ]
 
-function parseTags(tags: string | undefined): string[] {
+function parseTags(tags: string | string[] | undefined): string[] {
   if (!tags) return []
+  if (Array.isArray(tags)) return tags
   try {
     const parsed = JSON.parse(tags) as unknown
     return Array.isArray(parsed) ? (parsed as string[]) : []
@@ -286,7 +287,7 @@ const fetchData = async () => {
     ...searchParams,
   })
   if (res.data.data) {
-    dataList.value = res.data.data.records ?? []
+    dataList.value = (res.data.data.records ?? []) as API.PictureVO[]
     total.value = res.data.data.total ?? 0
   } else {
     message.error('获取数据失败，' + res.data.message)
